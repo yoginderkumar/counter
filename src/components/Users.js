@@ -1,11 +1,12 @@
 import React from "react";
-import { Card } from "antd";
-
-const { Meta } = Card;
+import User from "./User";
+import { Input } from "antd";
 
 class Users extends React.Component {
   state = {
     users: [],
+    search: "",
+    filteredUsers: [],
   };
   componentDidMount() {
     const a = fetch("https://api.github.com/users");
@@ -13,23 +14,52 @@ class Users extends React.Component {
       .then((users) => this.setState({ users }))
       .catch((err) => console.log("err: ", err));
   }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.search !== this.state.search) {
+      this.updateUserData();
+    }
+  }
+
+  handleSearchInputHandler = (e) => {
+    const { value } = e.target;
+    this.setState({ search: value });
+  };
+
+  updateUserData = () => {
+    this.setState({
+      filteredUsers: this.state.users.filter((user) =>
+        user.login.includes(this.state.search)
+      ),
+    });
+  };
+
   render() {
-    const { users } = this.state;
-    console.log("Users: ", users);
+    const { users, filteredUsers, search } = this.state;
     return (
-      <div>
-        {users.map((user, index) => (
-          <Card
-            hoverable
-            key={user.node_id}
-            style={{ width: 240, margin: 50 }}
-            cover={
-              <img alt="example" src={`https://robohash.org/${index}.png`} />
-            }
-          >
-            <Meta title={user.login} />
-          </Card>
-        ))}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Input
+          value={search}
+          placeholder="Search by username"
+          onChange={this.handleSearchInputHandler}
+          style={{ width: "30%", marginTop: 20 }}
+        />
+        <div style={{ display: "flex", flexWrap: "wrap" }}>
+          {search
+            ? filteredUsers.map((user) => (
+                <User key={user.node_id} user={user} isFollowersDisabled />
+              ))
+            : users.map((user) => (
+                <User key={user.node_id} user={user} isFollowersDisabled />
+              ))}
+        </div>
       </div>
     );
   }
