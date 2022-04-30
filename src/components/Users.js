@@ -1,13 +1,18 @@
 import React from "react";
-import User from "./User";
 import { Input } from "antd";
+
+import User from "./User";
+import FollowersModal from "./FollowersModal";
 
 class Users extends React.Component {
   state = {
     users: [],
     search: "",
-    filteredUsers: [],
+    followers: [],
+    selectedUser: {},
+    isFollowersModalVisible: false,
   };
+
   componentDidMount() {
     const a = fetch("https://api.github.com/users");
     a.then((data) => data.json())
@@ -15,27 +20,35 @@ class Users extends React.Component {
       .catch((err) => console.log("err: ", err));
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.search !== this.state.search) {
-      this.updateUserData();
-    }
-  }
-
   handleSearchInputHandler = (e) => {
     const { value } = e.target;
     this.setState({ search: value });
   };
 
-  updateUserData = () => {
-    this.setState({
-      filteredUsers: this.state.users.filter((user) =>
-        user.login.includes(this.state.search)
-      ),
+  onFollowersClickHandler = (user) => {
+    this.setState({ isFollowersModalVisible: true, selectedUser: user }, () => {
+      this.getFollowersList();
     });
   };
 
+  onCloseFollowersModal = () => {
+    this.setState({ isFollowersModalVisible: false });
+  };
+
+  getFollowersList = () => {
+    const { selectedUser } = this.state;
+    fetch(selectedUser.followers_url)
+      .then((data) => data.json())
+      .then((followers) => {
+        this.setState({ followers });
+      })
+      .catch((err) => console.log("Err: ", err));
+  };
+
   render() {
-    const { users, filteredUsers, search } = this.state;
+    const { users, search, followers, isFollowersModalVisible } = this.state;
+    const filteredUsers = users.filter((user) => user.login.includes(search));
+    console.log("Users: ", isFollowersModalVisible);
     return (
       <div
         style={{
@@ -52,14 +65,19 @@ class Users extends React.Component {
           style={{ width: "30%", marginTop: 20 }}
         />
         <div style={{ display: "flex", flexWrap: "wrap" }}>
-          {search
-            ? filteredUsers.map((user) => (
-                <User key={user.node_id} user={user} isFollowersDisabled />
-              ))
-            : users.map((user) => (
-                <User key={user.node_id} user={user} isFollowersDisabled />
-              ))}
+          {filteredUsers.map((user) => (
+            <User
+              user={user}
+              key={user.node_id}
+              onFollowersClickHandler={this.onFollowersClickHandler}
+            />
+          ))}
         </div>
+        <FollowersModal
+          followers={followers}
+          isModalVisible={isFollowersModalVisible}
+          onCloseModal={this.onCloseFollowersModal}
+        />
       </div>
     );
   }
