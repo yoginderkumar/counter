@@ -48,7 +48,6 @@ class Users extends React.Component {
   render() {
     const { users, search, followers, isFollowersModalVisible } = this.state;
     const filteredUsers = users.filter((user) => user.login.includes(search));
-    console.log("Users: ", isFollowersModalVisible);
     return (
       <div
         style={{
